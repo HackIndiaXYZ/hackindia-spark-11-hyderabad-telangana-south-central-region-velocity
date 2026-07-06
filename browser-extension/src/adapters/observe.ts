@@ -42,11 +42,18 @@ export function watchForComposer(
 ): MutationObserver {
   patchHistoryOnce()
 
-  const seen = new WeakSet<HTMLElement>()
+  // Deliberately NOT deduped by "have we seen this input before" - several
+  // sites (Gemini's Angular composer especially) swap the send BUTTON
+  // between disabled/enabled DOM nodes as the user types, even while the
+  // input element itself stays the same. A one-time capture on first sight
+  // of the input would leave the tracked button reference pointing at a
+  // detached node by the time the user actually clicks it, silently
+  // breaking interception. onReady (content/index.ts's attach()) is a
+  // cheap no-op-ish assignment, so refreshing on every tick costs nothing
+  // and guarantees the tracked button is always the one currently live.
   const check = () => {
     const input = findInput()
-    if (input && !seen.has(input)) {
-      seen.add(input)
+    if (input) {
       onReady(input, findSendButton())
     }
   }

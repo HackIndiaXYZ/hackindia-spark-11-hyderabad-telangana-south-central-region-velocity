@@ -10,12 +10,16 @@ import {
   Globe,
   Clock,
   Building2,
+  RefreshCw,
 } from "lucide-react"
 import type { AuthState, BackendStatus, ExtensionMessage, LastScan } from "@/types/messages"
 import { Logo } from "@/components/Logo"
 import { getTheme, setTheme as persistTheme, type Theme } from "@/services/theme"
 import { deriveOrgName, isSupportedHostname, timeAgo } from "@/utils/org"
 import { ACTION_LABELS } from "@/utils/labels"
+
+// Must match the same literal used in background/index.ts.
+const REOPEN_POPUP_KEY = "promptshield_reopen_popup"
 
 function sendMessage<T = unknown>(message: ExtensionMessage): Promise<T> {
   return new Promise((resolve) => chrome.runtime.sendMessage(message, resolve))
@@ -44,6 +48,7 @@ export default function App() {
   const [protectionEnabled, setProtectionEnabled] = useState(true)
   const [hostname, setHostname] = useState<string | null>(null)
   const [lastScan, setLastScan] = useState<LastScan | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +93,25 @@ export default function App() {
     setAuth(result)
   }
 
+  // Reloads the extension itself only - picks up whatever is currently
+  // built on disk, identical to clicking "reload" on chrome://extensions
+  // (background service worker restarts, popup re-mounts fresh). Does NOT
+  // touch any open tab or page the user is on.
+  //
+  // chrome.runtime.reload() tears down this popup's own JS context along
+  // with everything else, closing the popup window - there's no way to
+  // keep the SAME popup instance alive across a real extension reload,
+  // that's Chrome's own behavior. The best available fix: leave a flag in
+  // storage right before reloading, and have the background service
+  // worker (which runs its top-level code fresh on every restart,
+  // including immediately after this reload) check that flag and
+  // reopen the popup automatically via chrome.action.openPopup().
+  async function handleRefresh() {
+    setIsRefreshing(true)
+    await chrome.storage.local.set({ [REOPEN_POPUP_KEY]: true })
+    chrome.runtime.reload()
+  }
+
   async function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark"
     setThemeState(next)
@@ -109,13 +133,24 @@ export default function App() {
           <Logo className="h-6 w-6" />
           <span className="text-sm font-semibold">PromptShield AI</span>
         </div>
-        <button
-          onClick={toggleTheme}
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label="Reload extension"
+            title="Reload the extension"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {isLoading ? (

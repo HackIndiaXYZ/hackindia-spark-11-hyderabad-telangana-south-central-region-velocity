@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
-:root {
+/* :host, not :root - this stylesheet lives inside a Shadow DOM, and :root
+   only ever matches the main document's <html> element. It can never match
+   anything inside a shadow tree, so these custom properties would otherwise
+   never actually be defined anywhere our modal could see them - every
+   var(--card)/var(--overlay)/etc. reference would silently resolve to
+   nothing, leaving every background fully transparent and the host page
+   bleeding straight through. :host targets the shadow root's own host
+   element and correctly cascades these variables to everything inside. */
+:host {
   --background: oklch(1 0 0);
   --foreground: oklch(0.15 0.01 260);
   --card: oklch(1 0 0);

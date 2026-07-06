@@ -24,8 +24,6 @@ import type { ExtensionMessage, ScanResult } from "@/types/messages"
 const adapter = getAdapterForHostname(window.location.hostname)
 
 if (adapter) {
-  void mountContentUI()
-
   let bypassNextSubmit = false
   let isProcessing = false
   let currentInput: HTMLElement | null = null
@@ -36,16 +34,32 @@ if (adapter) {
     currentSendButton = sendButton
   }
 
-  // Bound once, on `document` - not on the site's own button/input elements.
-  // ChatGPT/Claude/Gemini are React (or similar) SPAs: the framework attaches
-  // its OWN click handler at its root container, an ancestor of the send
-  // button. During the native capture phase, ancestors always fire before
-  // descendants, so a listener on the button itself always loses the race -
-  // the framework's send logic fires first, the message goes out, and only
-  // then does our preventDefault() run (too late). `document` is the
-  // outermost ancestor of everything, including the framework's own root,
-  // so binding here guarantees we see the event first and can stop it
-  // before the framework ever does.
+  // Bound once, on `document` - not on the site's own button/input elements
+  // - AND as early as possible: manifest.json runs this content script at
+  // "document_start" specifically so these lines execute BEFORE the page's
+  // own JavaScript has booted. Two separate race conditions matter here:
+  //
+  //  1. DOM depth: ChatGPT/Claude/Gemini are React/Angular SPAs whose
+  //     framework attaches its OWN handler at (or near) its root container,
+  //     an ancestor of the send button. During the native capture phase,
+  //     ancestors fire before descendants, so a listener on the button
+  //     itself always loses - the framework's send logic fires first, the
+  //     message goes out, and only then does our preventDefault() run (too
+  //     late). `document` is the outermost ancestor of everything,
+  //     including the framework's own root, so binding here wins on depth
+  //     alone.
+  //  2. Registration order: for two listeners on the SAME node in the SAME
+  //     phase, whichever was added first runs first - depth doesn't help
+  //     there. If the page itself ever attaches something at the
+  //     document/window level (global keyboard shortcuts, etc.), running
+  //     at "document_idle" would mean the page's own script already booted
+  //     and registered first, beating us. "document_start" guarantees we
+  //     register before the page's own script has even begun executing.
+  //
+  // Registering here doesn't need the DOM to be ready - `document` is a
+  // valid EventTarget from the very first instant, even before <body>
+  // exists. Only the UI mount and composer watcher below need to wait for
+  // an actual DOM to attach to.
   document.addEventListener(
     "click",
     (event) => {
@@ -184,5 +198,20 @@ if (adapter) {
     }
   }
 
-  adapter.observeDOM((input, sendButton) => attach(input, sendButton))
+  // document.body (and often document.documentElement's full subtree) may
+  // not exist yet at "document_start" - mounting our Shadow DOM host and
+  // starting the MutationObserver both need a real DOM to attach to, so
+  // defer just these two calls until the document is actually ready. The
+  // interception listeners above are already live well before this point.
+  function start() {
+    if (!adapter) return
+    void mountContentUI()
+    adapter.observeDOM((input, sendButton) => attach(input, sendButton))
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start)
+  } else {
+    start()
+  }
 }

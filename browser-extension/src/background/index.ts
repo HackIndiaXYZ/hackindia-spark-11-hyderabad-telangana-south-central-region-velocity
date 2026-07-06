@@ -18,9 +18,33 @@ const USER_KEY = "promptshield_user"
 const BACKEND_STATUS_KEY = "promptshield_backend_status"
 const PROTECTION_KEY = "promptshield_protection_enabled"
 const LAST_SCAN_KEY = "promptshield_last_scan"
+// Must match the same literal used in popup/App.tsx.
+const REOPEN_POPUP_KEY = "promptshield_reopen_popup"
 
 const HEALTH_ALARM = "promptshield-health-check"
 const HEALTH_CHECK_INTERVAL_MINUTES = 2
+
+// chrome.runtime.reload() (triggered by the popup's own refresh button)
+// tears down the popup along with everything else - there's no way to
+// keep that specific popup window alive across a real extension reload.
+// This top-level code runs fresh every time the service worker starts,
+// including immediately after such a reload, so it's the right place to
+// check "did the user just ask to be reloaded?" and reopen the popup for
+// them automatically instead of leaving them to click the toolbar icon
+// again themselves.
+void (async () => {
+  const stored = await chrome.storage.local.get(REOPEN_POPUP_KEY)
+  if (!stored[REOPEN_POPUP_KEY]) return
+  await chrome.storage.local.remove(REOPEN_POPUP_KEY)
+  try {
+    await chrome.action.openPopup()
+  } catch (err) {
+    // openPopup() requires Chrome 127+ and can still fail on some window
+    // states - failing silently just means the user clicks the toolbar
+    // icon once themselves, exactly like before this feature existed.
+    console.info("[PromptShield AI] Could not auto-reopen popup after reload:", err)
+  }
+})()
 
 async function getAuthState(): Promise<AuthState> {
   const stored = await chrome.storage.local.get([TOKEN_KEY, USER_KEY])

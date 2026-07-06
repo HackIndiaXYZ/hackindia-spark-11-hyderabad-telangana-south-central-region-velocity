@@ -18,13 +18,14 @@ export function ModalShell({ tone, title, subtitle, children, footer }: ModalShe
   const styles = TONE_STYLES[tone]
   return (
     <div
-      className="promptshield-root ps-anim-overlay fixed inset-0 z-[2147483000] flex items-center justify-center bg-[var(--color-overlay,rgba(0,0,0,0.5))] p-4"
-      style={{ background: "var(--overlay)" }}
+      className="promptshield-root ps-anim-overlay fixed inset-0 z-[2147483000] flex items-center justify-center p-4"
+      style={{ background: "var(--overlay)", isolation: "isolate" }}
     >
       <div
-        className={`ps-anim-modal w-full max-w-md rounded-2xl border border-border bg-card text-card-foreground shadow-2xl ring-4 ${styles.ring}`}
+        className={`ps-anim-modal w-full max-w-md rounded-2xl border border-border text-card-foreground shadow-2xl ring-4 ${styles.ring}`}
+        style={{ background: "var(--card)", isolation: "isolate" }}
       >
-        <div className="flex items-start gap-3 border-b border-border p-5">
+        <div className="flex items-start gap-3 border-b border-border p-5" style={{ background: "var(--card)" }}>
           <div className={`mt-0.5 shrink-0 ${styles.icon}`}>
             <ShieldHalf className="h-5 w-5" />
           </div>
@@ -34,9 +35,16 @@ export function ModalShell({ tone, title, subtitle, children, footer }: ModalShe
           </div>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-5">{children}</div>
+        <div className="max-h-[60vh] overflow-y-auto p-5" style={{ background: "var(--card)" }}>
+          {children}
+        </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border p-4">{footer}</div>
+        <div
+          className="flex items-center justify-end gap-2 border-t border-border p-4"
+          style={{ background: "var(--card)" }}
+        >
+          {footer}
+        </div>
       </div>
     </div>
   )
