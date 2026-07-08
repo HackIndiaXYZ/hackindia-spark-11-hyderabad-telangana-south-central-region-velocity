@@ -11,15 +11,22 @@
  *             reviews and clicks Send again themselves (never auto-resent).
  *   BLOCK  -> blocking modal, submission is never sent to the site.
  *
+ * File Scanning: this file ALSO intercepts file selection (file-picker
+ * "change" events) and drag-and-drop ("drop" events) using the exact same
+ * document-capture-phase trick as prompt interception below, so a file is
+ * gated before the site's own attach/upload flow ever sees it. See the
+ * "File upload interception" section near the bottom.
+ *
  * This file contains zero detection logic - everything about *why* a
- * prompt was flagged comes from the backend's response and is rendered by
- * the Explainable AI panel (content/ui/RiskAnalysisPanel.tsx).
+ * prompt or file was flagged comes from the backend's response and is
+ * rendered by the Explainable AI panel (content/ui/RiskAnalysisPanel.tsx).
  */
 import { getAdapterForHostname } from "@/adapters"
 import { mountContentUI } from "@/content/ui/mount"
-import { buildRiskAnalysis } from "@/content/ui/riskAnalysis"
+import { buildRiskAnalysis, type RiskAnalysisView } from "@/content/ui/riskAnalysis"
 import { setState } from "@/content/ui/store"
-import type { ExtensionMessage, ScanResult } from "@/types/messages"
+import { MAX_FILES_PER_REQUEST, fileToBase64, partitionBySize, replayFilesAsDrop, replayFilesIntoInput } from "@/utils/files"
+import type { ExtensionMessage, ScanFilePayload, ScanResult } from "@/types/messages"
 
 const adapter = getAdapterForHostname(window.location.hostname)
 
@@ -34,32 +41,6 @@ if (adapter) {
     currentSendButton = sendButton
   }
 
-  // Bound once, on `document` - not on the site's own button/input elements
-  // - AND as early as possible: manifest.json runs this content script at
-  // "document_start" specifically so these lines execute BEFORE the page's
-  // own JavaScript has booted. Two separate race conditions matter here:
-  //
-  //  1. DOM depth: ChatGPT/Claude/Gemini are React/Angular SPAs whose
-  //     framework attaches its OWN handler at (or near) its root container,
-  //     an ancestor of the send button. During the native capture phase,
-  //     ancestors fire before descendants, so a listener on the button
-  //     itself always loses - the framework's send logic fires first, the
-  //     message goes out, and only then does our preventDefault() run (too
-  //     late). `document` is the outermost ancestor of everything,
-  //     including the framework's own root, so binding here wins on depth
-  //     alone.
-  //  2. Registration order: for two listeners on the SAME node in the SAME
-  //     phase, whichever was added first runs first - depth doesn't help
-  //     there. If the page itself ever attaches something at the
-  //     document/window level (global keyboard shortcuts, etc.), running
-  //     at "document_idle" would mean the page's own script already booted
-  //     and registered first, beating us. "document_start" guarantees we
-  //     register before the page's own script has even begun executing.
-  //
-  // Registering here doesn't need the DOM to be ready - `document` is a
-  // valid EventTarget from the very first instant, even before <body>
-  // exists. Only the UI mount and composer watcher below need to wait for
-  // an actual DOM to attach to.
   document.addEventListener(
     "click",
     (event) => {
@@ -78,10 +59,6 @@ if (adapter) {
     },
     { capture: true }
   )
-  // Some sites' composers are wrapped in a real <form> (chatgpt.ts's own
-  // selectors reference `form button[type="submit"]`), and the send action
-  // fires via the form's native "submit" event rather than a click handler.
-  // Catch that path too, same document-capture-wins-the-race reasoning.
   document.addEventListener(
     "submit",
     (event) => {
@@ -95,6 +72,160 @@ if (adapter) {
     },
     { capture: true }
   )
+
+  let isProcessingFiles = false
+  const bypassInputs = new WeakSet<HTMLInputElement>()
+  let bypassNextDrop = false
+
+  function clientSideRejection(message: string): RiskAnalysisView {
+    return { risk: "CRITICAL", score: 0, action: "BLOCK", reason: message, triggeredPolicy: null, findings: [], fileGroups: [] }
+  }
+
+  interface FileGateActions {
+    replay: (files: File[]) => void
+    clear: () => void
+  }
+
+  async function handleFilesIntercepted(rawFiles: File[], actions: FileGateActions) {
+    if (!adapter) {
+      actions.replay(rawFiles)
+      return
+    }
+
+    if (rawFiles.length > MAX_FILES_PER_REQUEST) {
+      setState({
+        type: "block",
+        analysis: clientSideRejection(`You can attach up to ${MAX_FILES_PER_REQUEST} files at a time - please attach them in smaller batches.`),
+      })
+      actions.clear()
+      return
+    }
+
+    const { ok: sizedFiles, rejected } = partitionBySize(rawFiles)
+    if (rejected.length > 0) {
+      setState({ type: "block", analysis: clientSideRejection(rejected.map((r) => r.reason).join(" ")) })
+      actions.clear()
+      return
+    }
+
+    if (isProcessingFiles) {
+      actions.replay(sizedFiles)
+      return
+    }
+
+    isProcessingFiles = true
+    try {
+      const encoded: ScanFilePayload[] = await Promise.all(
+        sizedFiles.map(async (file) => ({
+          filename: file.name,
+          contentBase64: await fileToBase64(file),
+          mimeType: file.type || undefined,
+          sizeBytes: file.size,
+        }))
+      )
+
+      const prompt = adapter && currentInput ? adapter.getPromptText(currentInput) : ""
+
+      let result: ScanResult
+      try {
+        result = await sendScanMessage(prompt, adapter.siteName, encoded)
+      } catch (err) {
+        console.error("[PromptShield AI] File scan request failed - allowing files through (fail open).", err)
+        actions.replay(sizedFiles)
+        return
+      }
+
+      logActivity(result.decision)
+
+      const fileFindings = result.file_findings ?? []
+      const byFilename = new Map(sizedFiles.map((file) => [file.name, file]))
+      const safeFiles: File[] = []
+      const flaggedFiles: File[] = []
+      const blockedFiles: File[] = []
+
+      for (const finding of fileFindings) {
+        const file = byFilename.get(finding.filename)
+        if (!file) continue
+        if (finding.action === "BLOCK") blockedFiles.push(file)
+        else if (finding.action === "WARN" || finding.action === "REDACT") flaggedFiles.push(file)
+        else safeFiles.push(file)
+      }
+      for (const file of sizedFiles) {
+        if (!fileFindings.some((finding) => finding.filename === file.name)) safeFiles.push(file)
+      }
+
+      if (safeFiles.length > 0) actions.replay(safeFiles)
+
+      if (flaggedFiles.length === 0 && blockedFiles.length === 0) {
+        return
+      }
+
+      setState({
+        type: "file-review",
+        analysis: buildRiskAnalysis(result),
+        onDismiss: () => {
+          /* flagged/blocked files simply aren't uploaded */
+        },
+        onUploadFlagged: flaggedFiles.length > 0 ? () => actions.replay(flaggedFiles) : null,
+      })
+    } finally {
+      isProcessingFiles = false
+    }
+  }
+
+  function handleFileInputChange(event: Event) {
+    const target = event.target
+    if (!(target instanceof HTMLInputElement) || target.type !== "file") return
+
+    if (bypassInputs.has(target)) {
+      bypassInputs.delete(target)
+      return
+    }
+
+    const files = Array.from(target.files ?? [])
+    if (files.length === 0) return
+
+    event.stopImmediatePropagation()
+    void handleFilesIntercepted(files, {
+      replay: (filesToReplay) => {
+        if (filesToReplay.length === 0) {
+          target.value = ""
+          return
+        }
+        bypassInputs.add(target)
+        replayFilesIntoInput(target, filesToReplay)
+      },
+      clear: () => {
+        target.value = ""
+      },
+    })
+  }
+
+  function handleDrop(event: DragEvent) {
+    if (bypassNextDrop) {
+      bypassNextDrop = false
+      return
+    }
+
+    const files = event.dataTransfer ? Array.from(event.dataTransfer.files ?? []) : []
+    if (files.length === 0) return
+
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    void handleFilesIntercepted(files, {
+      replay: (filesToReplay) => {
+        if (filesToReplay.length === 0) return
+        bypassNextDrop = true
+        replayFilesAsDrop(filesToReplay, event)
+      },
+      clear: () => {
+        // Nothing to clear.
+      },
+    })
+  }
+
+  document.addEventListener("change", handleFileInputChange, { capture: true })
+  document.addEventListener("drop", handleDrop, { capture: true })
 
   function onKeydown(event: KeyboardEvent) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -112,11 +243,6 @@ if (adapter) {
     const prompt = adapter.getPromptText(currentInput)
     if (!prompt.trim()) return
 
-    // Always intercept first - we decide whether to let it through once the
-    // backend responds. This is a firm "fail closed until proven safe" for
-    // the interception itself, even though the backend fails OPEN on error
-    // (see the catch block below) so a backend outage never traps an
-    // employee's work indefinitely.
     event.preventDefault()
     event.stopImmediatePropagation()
 
@@ -132,9 +258,9 @@ if (adapter) {
     }
   }
 
-  function sendScanMessage(prompt: string, site: string): Promise<ScanResult> {
+  function sendScanMessage(prompt: string, site: string, files: ScanFilePayload[] = []): Promise<ScanResult> {
     return new Promise((resolve, reject) => {
-      const message: ExtensionMessage = { type: "SCAN_PROMPT", payload: { prompt, site } }
+      const message: ExtensionMessage = { type: "SCAN_PROMPT", payload: { prompt, site, files } }
       chrome.runtime.sendMessage(message, (result: ScanResult) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message))
@@ -175,7 +301,6 @@ if (adapter) {
       return
     }
 
-    // ALLOW - no popup, just let it through.
     resubmit()
   }
 
@@ -198,11 +323,6 @@ if (adapter) {
     }
   }
 
-  // document.body (and often document.documentElement's full subtree) may
-  // not exist yet at "document_start" - mounting our Shadow DOM host and
-  // starting the MutationObserver both need a real DOM to attach to, so
-  // defer just these two calls until the document is actually ready. The
-  // interception listeners above are already live well before this point.
   function start() {
     if (!adapter) return
     void mountContentUI()

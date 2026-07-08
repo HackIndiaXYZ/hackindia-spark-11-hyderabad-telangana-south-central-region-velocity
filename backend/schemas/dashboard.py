@@ -43,6 +43,23 @@ class RecentActivityItem(BaseModel):
     created_at: datetime
 
 
+class FileTypeBreakdownPoint(BaseModel):
+    extension: str
+    count: int
+
+
+class FileCategoryPoint(BaseModel):
+    category: str
+    count: int
+
+
+class FileScanStats(BaseModel):
+    total_files_scanned: int
+    blocked_uploads: int
+    file_type_breakdown: list[FileTypeBreakdownPoint]
+    top_sensitive_categories: list[FileCategoryPoint]
+
+
 class DashboardSummary(BaseModel):
     security_score: int
     total_prompts: int
@@ -59,3 +76,5 @@ class DashboardSummary(BaseModel):
     website_usage: list[WebsiteUsagePoint]
     department_usage: list[DepartmentUsagePoint]
     recent_activity: list[RecentActivityItem]
+    # File Scanning: additive - powers the Dashboard's "File Scanning" cards.
+    file_stats: FileScanStats

@@ -9,6 +9,8 @@ import {
   Users,
   Globe2,
   Inbox,
+  FileText,
+  FileWarning,
 } from "lucide-react"
 import {
   Area,
@@ -248,6 +250,78 @@ export function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Files Scanned</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <span className="text-2xl font-semibold">{data.file_stats.total_files_scanned.toLocaleString()}</span>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Blocked Uploads</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-2">
+                <FileWarning className="h-5 w-5 text-danger" />
+                <span className="text-2xl font-semibold">{data.file_stats.blocked_uploads.toLocaleString()}</span>
+              </CardContent>
+            </Card>
+          </div>
+
+          {data.file_stats.total_files_scanned > 0 && (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Uploaded File Types</CardTitle>
+                </CardHeader>
+                <CardContent className="h-56">
+                  {data.file_stats.file_type_breakdown.length === 0 ? (
+                    <p className="pt-8 text-center text-sm text-muted-foreground">No files scanned yet.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.file_stats.file_type_breakdown} layout="vertical" margin={{ left: 8 }}>
+                        <XAxis type="number" hide allowDecimals={false} />
+                        <YAxis
+                          dataKey="extension"
+                          type="category"
+                          width={70}
+                          fontSize={11}
+                          stroke="var(--color-muted-foreground)"
+                          tickFormatter={(v) => `.${v}`}
+                        />
+                        <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} />
+                        <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sensitive File Categories</CardTitle>
+                </CardHeader>
+                <CardContent className="h-56">
+                  {data.file_stats.top_sensitive_categories.length === 0 ? (
+                    <p className="pt-8 text-center text-sm text-muted-foreground">No high-risk file uploads yet.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.file_stats.top_sensitive_categories} layout="vertical" margin={{ left: 8 }}>
+                        <XAxis type="number" hide allowDecimals={false} />
+                        <YAxis dataKey="category" type="category" width={90} fontSize={11} stroke="var(--color-muted-foreground)" />
+                        <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} />
+                        <Bar dataKey="count" fill="var(--color-danger)" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <Card>
             <CardHeader>

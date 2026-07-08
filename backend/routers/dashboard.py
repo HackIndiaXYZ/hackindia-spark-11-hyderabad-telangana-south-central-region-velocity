@@ -37,4 +37,5 @@ def get_dashboard_summary(
         website_usage=analytics.website_usage(db),
         department_usage=analytics.department_usage(db),
         recent_activity=analytics.recent_activity(db),
+        file_stats=analytics.file_scan_stats(db),
     )

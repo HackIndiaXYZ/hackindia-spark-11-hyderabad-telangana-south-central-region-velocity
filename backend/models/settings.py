@@ -27,8 +27,29 @@ class OrgSettings(Base):
     risk_threshold: Mapped[int] = mapped_column(Integer, default=70, nullable=False)
 
     supported_websites: Mapped[list] = mapped_column(JSON, default=lambda: ["ChatGPT", "Claude", "Gemini"])
+    # File Scanning: the full extraction-capable set from ai/file_scanner.py
+    # (documents, source code, configuration, data, logs, images) is allowed
+    # by default; an admin can narrow this from the Settings page at any
+    # time (enforced in ai/pipeline.py via ai/file_risk.py's
+    # assess_disallowed_extension - anything removed from this list is
+    # rejected before its content is even extracted).
     allowed_file_types: Mapped[list] = mapped_column(
-        JSON, default=lambda: ["pdf", "docx", "csv", "xlsx", "txt", "png", "jpg", "jpeg"]
+        JSON,
+        default=lambda: [
+            # Documents
+            "pdf", "docx", "txt",
+            # Source code
+            "java", "py", "js", "jsx", "ts", "tsx", "cpp", "cc", "cxx", "h", "hpp", "c", "cs",
+            "go", "rs", "php", "html", "htm", "css", "sql",
+            # Configuration
+            "env", "properties", "yaml", "yml", "json", "xml",
+            # Data
+            "csv", "xlsx",
+            # Logs
+            "log",
+            # Images (OCR)
+            "png", "jpg", "jpeg",
+        ],
     )
     theme_default: Mapped[str] = mapped_column(String(10), default="light", nullable=False)
 

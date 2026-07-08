@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from schemas.scan import FileFindingSummary
+
 
 class PromptLogListItem(BaseModel):
     id: str
@@ -14,6 +16,10 @@ class PromptLogListItem(BaseModel):
     action: str
     status: str  # "Clean" | "Flagged" - derived from action
     created_at: datetime
+    # File Scanning: additive - lets the list view show a paperclip/count
+    # badge without a second request per row.
+    has_files: bool = False
+    file_count: int = 0
 
 
 class PromptLogListResponse(BaseModel):
@@ -46,3 +52,5 @@ class PromptLogDetail(BaseModel):
     sanitized_prompt: str
     triggered_rules: list[TriggeredRuleDetail]
     created_at: datetime
+    # File Scanning: additive - populates the drawer's "Attached Files" section.
+    files: list[FileFindingSummary] = []

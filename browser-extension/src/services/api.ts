@@ -2,7 +2,7 @@
  * Backend client used by the background service worker. Runs outside any
  * page's CSP, so plain fetch() against the configured API base URL is safe.
  */
-import type { AuthUser, ScanResult } from "@/types/messages"
+import type { AuthUser, ScanFilePayload, ScanResult } from "@/types/messages"
 
 export const API_BASE_URL = "http://localhost:8000"
 
@@ -94,16 +94,48 @@ export class ScanUnauthorizedError extends Error {
  * re-login. The prompt for THIS call still gets to go through (see the
  * SCAN_PROMPT handler) - failing open never gets undone, only the silent
  * "everything is fine" part does.
+ *
+ * File Scanning: `files` is optional and additive - a prompt-only call
+ * (the original signature's every existing caller) sends no `files` key
+ * at all, so the backend's ScanRequest sees exactly the same body shape
+ * it always has. When files ARE attached (content/index.ts's file
+ * interception), they're base64-encoded client-side and sent alongside
+ * the prompt so the backend can compute one unified decision - see
+ * ai/pipeline.py.
  */
-export async function scanPrompt(token: string | null, prompt: string, site: string): Promise<ScanResult> {
+export async function scanPrompt(
+  token: string | null,
+  prompt: string,
+  site: string,
+  files: ScanFilePayload[] = []
+): Promise<ScanResult> {
   const res = await fetchWithRetry(`${API_BASE_URL}/api/scan`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ prompt, site }),
-    signal: AbortSignal.timeout(15000),
+    body: JSON.stringify({
+      prompt,
+      site,
+      ...(files.length > 0
+        ? {
+            files: files.map((f) => ({
+              filename: f.filename,
+              content_base64: f.contentBase64,
+              mime_type: f.mimeType,
+              size_bytes: f.sizeBytes,
+            })),
+          }
+        : {}),
+    }),
+    // File uploads can legitimately take longer to scan (extraction +
+    // running every detector over potentially several files) than a plain
+    // text prompt - a fixed 15s budget that's fine for text alone risks
+    // spuriously failing open on a large but perfectly legitimate batch of
+    // attachments. Scale the timeout with file count, capped well below
+    // where a user would assume the site itself has hung.
+    signal: AbortSignal.timeout(files.length > 0 ? 30000 : 15000),
   }).catch(() => null)
 
   if (res === null) {

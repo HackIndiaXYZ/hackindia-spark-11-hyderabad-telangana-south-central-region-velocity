@@ -1,7 +1,7 @@
 """Response schemas for GET /api/analytics/summary."""
 from pydantic import BaseModel
 
-from schemas.dashboard import DailyActivityPoint, DepartmentUsagePoint, DetectorCount, WebsiteUsagePoint
+from schemas.dashboard import DailyActivityPoint, DepartmentUsagePoint, DetectorCount, FileScanStats, WebsiteUsagePoint
 
 
 class RiskTrendPoint(BaseModel):
@@ -24,3 +24,4 @@ class AnalyticsSummary(BaseModel):
     website_usage: list[WebsiteUsagePoint]
     department_usage: list[DepartmentUsagePoint]
     top_employees_by_violations: list[TopEmployeeViolation]
+    file_stats: FileScanStats

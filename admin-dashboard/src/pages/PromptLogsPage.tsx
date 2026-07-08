@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Search, Filter, Eye, EyeOff, ScrollText, ArrowUpDown } from "lucide-react"
+import { Search, Filter, Eye, EyeOff, ScrollText, ArrowUpDown, Paperclip } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -123,6 +123,7 @@ export function PromptLogsPage() {
                   <tr>
                     <th className="px-5 py-3 font-medium">Employee</th>
                     <th className="px-5 py-3 font-medium">AI Website</th>
+                    <th className="px-5 py-3 font-medium">Files</th>
                     <th className="px-5 py-3 font-medium">Risk</th>
                     <th className="px-5 py-3 font-medium">
                       <button className="flex items-center gap-1" onClick={() => toggleSort("score")}>
@@ -150,6 +151,15 @@ export function PromptLogsPage() {
                         <p className="text-xs text-muted-foreground">{log.employee_email}</p>
                       </td>
                       <td className="px-5 py-3">{log.website}</td>
+                      <td className="px-5 py-3">
+                        {log.has_files ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <Paperclip className="h-3 w-3" /> {log.file_count}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3"><RiskBadge risk={log.risk} /></td>
                       <td className="px-5 py-3">{log.score}</td>
                       <td className="px-5 py-3"><ActionBadge action={log.action} /></td>
@@ -223,6 +233,31 @@ function PromptLogDrawer({ id, onClose }: { id: string | null; onClose: () => vo
               <p className="mt-1">{formatDateTime(data.created_at)}</p>
             </div>
           </div>
+
+          {data.files.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium uppercase text-muted-foreground">
+                Attached Files ({data.files.length})
+              </p>
+              <ul className="space-y-1.5">
+                {data.files.map((file, i) => (
+                  <li key={i} className="rounded-md border border-border px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium" title={file.filename}>
+                        {file.filename}
+                      </span>
+                      <RiskBadge risk={file.risk} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {file.category} · .{file.extension || "?"}
+                      {file.size_bytes != null && ` · ${(file.size_bytes / 1024).toFixed(1)} KB`}
+                      {!file.extracted && file.extraction_note && ` · ${file.extraction_note}`}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {data.triggered_policy && (
             <div>

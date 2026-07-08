@@ -17,7 +17,25 @@ import {
   updateSettings,
 } from "@/lib/adminApi"
 
-const ALL_FILE_TYPES = ["pdf", "docx", "csv", "xlsx", "txt", "png", "jpg", "jpeg"]
+// Kept in sync with the backend's full extraction-capable set
+// (backend/ai/file_scanner.py FILE_CATEGORIES / backend/models/settings.py
+// OrgSettings.allowed_file_types default) - grouped the same way so this
+// list is easy to eyeball against that one when either changes.
+const FILE_TYPE_GROUPS: { label: string; types: string[] }[] = [
+  { label: "Documents", types: ["pdf", "docx", "txt"] },
+  {
+    label: "Source code",
+    types: [
+      "java", "py", "js", "jsx", "ts", "tsx", "cpp", "cc", "cxx", "h", "hpp", "c", "cs",
+      "go", "rs", "php", "html", "htm", "css", "sql",
+    ],
+  },
+  { label: "Configuration", types: ["env", "properties", "yaml", "yml", "json", "xml"] },
+  { label: "Data", types: ["csv", "xlsx"] },
+  { label: "Logs", types: ["log"] },
+  { label: "Images (OCR)", types: ["png", "jpg", "jpeg"] },
+]
+const ALL_FILE_TYPES = FILE_TYPE_GROUPS.flatMap((g) => g.types)
 const ALL_WEBSITES = ["ChatGPT", "Claude", "Gemini"]
 
 export function SettingsPage() {
@@ -126,15 +144,25 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Allowed file types</label>
-            <div className="flex flex-wrap gap-2">
-              {ALL_FILE_TYPES.map((type) => (
-                <button key={type} type="button" onClick={() => toggleInList(fileTypes, setFileTypes, type)}>
-                  <Badge tone={fileTypes.includes(type) ? "success" : "muted"}>.{type}</Badge>
-                </button>
-              ))}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Allowed file types</label>
+              <p className="text-xs text-muted-foreground">
+                Files scanned before upload; any type left off here is rejected without its content being read.
+              </p>
             </div>
+            {FILE_TYPE_GROUPS.map((group) => (
+              <div key={group.label} className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.types.map((type) => (
+                    <button key={type} type="button" onClick={() => toggleInList(fileTypes, setFileTypes, type)}>
+                      <Badge tone={fileTypes.includes(type) ? "success" : "muted"}>.{type}</Badge>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="flex items-center gap-3 pt-2">

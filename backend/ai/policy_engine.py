@@ -6,14 +6,20 @@ policy whose `detection_type` matches wins.
 
 `detection_type` can be either:
   - a fine-grained category (see _CATEGORY_MAP below) such as "api_key",
-    "email", "phone", "credit_card", "jwt", "password", "pii", "ssh_key" -
-    matched against the individual Match.label values a detector produced.
-    This is what lets an admin write "block API keys" WITHOUT also
-    blocking every prompt that happens to mention an email address, even
-    though both are found by the same regex detector.
+    "email", "phone", "credit_card", "jwt", "password", "pii", "ssh_key",
+    or one of the File Scanning identity categories - "env_file",
+    "credentials_file", "docker_compose_file", "source_code_file",
+    "config_file", "disallowed_file_type" - matched against the individual
+    Match.label values a detector produced. This is what lets an admin
+    write "block API keys" WITHOUT also blocking every prompt that happens
+    to mention an email address, even though both are found by the same
+    regex detector, and equally "block .env uploads" without blocking
+    every source-code upload.
   - a whole detector name ("regex", "presidio", "spacy", "source_code",
-    "company_keyword", "secrets", "semantic") or "all", for coarser rules
-    like "redact anything Presidio finds" or "block any detected secret".
+    "company_keyword", "secrets", "semantic", "file_type") or "all", for
+    coarser rules like "redact anything Presidio finds", "block any
+    detected secret", or "flag any file-identity risk regardless of which
+    kind".
 
 If no policy matches, the Decision Engine falls back to the Risk Engine's
 severity-based default action.
@@ -60,6 +66,18 @@ _CATEGORY_MAP: dict[str, str] = {
     "IBAN_CODE": "pii",
     "Private Key": "ssh_key",
     "AWS Access Key": "api_key",
+    # File Scanning identity categories (ai/file_risk.py) - deliberately
+    # kept distinct from the content-based categories above (e.g. a
+    # content-based "Private Key" match inside a prompt still maps to
+    # "ssh_key"; a *file itself being* a private key maps to
+    # "credentials_file") so an admin can target file-identity risk and
+    # content-based risk independently.
+    "ENV_FILE": "env_file",
+    "PRIVATE_KEY_OR_CREDENTIALS_FILE": "credentials_file",
+    "DOCKER_COMPOSE_FILE": "docker_compose_file",
+    "SOURCE_CODE_FILE": "source_code_file",
+    "CONFIG_FILE": "config_file",
+    "DISALLOWED_FILE_TYPE": "disallowed_file_type",
 }
 
 

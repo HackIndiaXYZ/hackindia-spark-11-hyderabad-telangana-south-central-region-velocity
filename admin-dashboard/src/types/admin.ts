@@ -42,6 +42,23 @@ export interface RecentActivityItem {
   created_at: string
 }
 
+export interface FileTypeBreakdownPoint {
+  extension: string
+  count: number
+}
+
+export interface FileCategoryPoint {
+  category: string
+  count: number
+}
+
+export interface FileScanStats {
+  total_files_scanned: number
+  blocked_uploads: number
+  file_type_breakdown: FileTypeBreakdownPoint[]
+  top_sensitive_categories: FileCategoryPoint[]
+}
+
 export interface DashboardSummary {
   security_score: number
   total_prompts: number
@@ -57,6 +74,7 @@ export interface DashboardSummary {
   website_usage: WebsiteUsagePoint[]
   department_usage: DepartmentUsagePoint[]
   recent_activity: RecentActivityItem[]
+  file_stats: FileScanStats
 }
 
 export interface RiskTrendPoint {
@@ -79,6 +97,7 @@ export interface AnalyticsSummary {
   website_usage: WebsiteUsagePoint[]
   department_usage: DepartmentUsagePoint[]
   top_employees_by_violations: TopEmployeeViolation[]
+  file_stats: FileScanStats
 }
 
 export interface PromptLogListItem {
@@ -91,6 +110,20 @@ export interface PromptLogListItem {
   action: Action
   status: "Clean" | "Flagged"
   created_at: string
+  has_files: boolean
+  file_count: number
+}
+
+export interface FileFinding {
+  filename: string
+  extension: string
+  category: string
+  size_bytes: number | null
+  mime_type: string | null
+  risk: Risk
+  score: number
+  extracted: boolean
+  extraction_note: string | null
 }
 
 export interface PromptLogListResponse {
@@ -123,6 +156,7 @@ export interface PromptLogDetail {
   sanitized_prompt: string
   triggered_rules: TriggeredRuleDetail[]
   created_at: string
+  files: FileFinding[]
 }
 
 export interface Policy {

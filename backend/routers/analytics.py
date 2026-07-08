@@ -30,4 +30,5 @@ def get_analytics_summary(
         website_usage=analytics.website_usage(db),
         department_usage=analytics.department_usage(db),
         top_employees_by_violations=analytics.top_employees_by_violations(db),
+        file_stats=analytics.file_scan_stats(db),
     )

@@ -9,6 +9,7 @@ from ai.decision_engine import Decision
 from models.audit_log import AuditLog
 from models.user import User
 from schemas.detection import Recommendation
+from schemas.scan import FileFindingSummary
 
 
 def log_scan(
@@ -18,7 +19,10 @@ def log_scan(
     original_prompt: str,
     sanitized_prompt: str,
     decision: Decision,
+    file_findings: list[FileFindingSummary] | None = None,
 ) -> AuditLog:
+    file_findings = file_findings or []
+
     entry = AuditLog(
         user_id=user.id,
         website=site,
@@ -29,6 +33,12 @@ def log_scan(
         action=decision.action.value,
         reason=decision.reason,
         triggered_rules=decision.triggered_rules,
+        has_files=len(file_findings) > 0,
+        file_count=len(file_findings),
+        # model_dump(): metadata only (filename/extension/category/size/
+        # mime_type/risk/score/extraction status) - never raw file content,
+        # see FileFindingSummary in schemas/scan.py.
+        files=[f.model_dump() for f in file_findings],
     )
     db.add(entry)
 

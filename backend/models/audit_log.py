@@ -17,11 +17,23 @@ existing ones - this project has no Alembic):
     ALTER TABLE audit_logs ADD INDEX ix_audit_logs_website (website);
     ALTER TABLE audit_logs ADD INDEX ix_audit_logs_action (action);
     ALTER TABLE audit_logs ADD INDEX ix_audit_logs_risk (risk);
+
+File Scanning note: `has_files`, `file_count`, and `files` were added so
+the audit trail covers uploaded attachments as well as prompt text. `files`
+stores ONLY metadata (filename, extension, category, size, mime type, risk,
+score, which detectors fired, and per-file extraction/decision notes) -
+never the raw file content, per the "do not store raw confidential file
+contents in logs" requirement. Existing databases need:
+
+    ALTER TABLE audit_logs ADD COLUMN has_files BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE audit_logs ADD INDEX ix_audit_logs_has_files (has_files);
+    ALTER TABLE audit_logs ADD COLUMN file_count INT NOT NULL DEFAULT 0;
+    ALTER TABLE audit_logs ADD COLUMN files JSON NOT NULL;
 """
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, Integer, Text, JSON, ForeignKey
+from sqlalchemy import String, DateTime, Integer, Text, JSON, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -49,6 +61,13 @@ class AuditLog(Base):
 
     # Serialized list of DetectionResult summaries: [{detector, severity, score, reason}, ...]
     triggered_rules: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+
+    # File Scanning: metadata-only record of any attachments included in
+    # this scan (see schemas/scan.py FileFindingSummary for the exact
+    # shape). Deliberately excludes extracted/original file text.
+    has_files: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    file_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    files: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True

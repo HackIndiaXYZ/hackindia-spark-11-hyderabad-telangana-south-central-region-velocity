@@ -101,12 +101,20 @@ async function handleMessage(message: ExtensionMessage) {
     case "LOGIN": {
       const { email, password } = message.payload
       const result = await loginRequest(email, password)
+      // Milestone 6 fix: promptshield_last_scan was a single global key with
+      // no notion of "whose" scan it was. Logging in as a different account
+      // in the same browser profile would keep showing the PREVIOUS
+      // account's last-scan time/site/decision in the popup, since nothing
+      // ever cleared it. A fresh login always starts a fresh session, so
+      // wipe any leftover scan history from whoever used the extension
+      // before this login.
+      await chrome.storage.local.remove(LAST_SCAN_KEY)
       await chrome.storage.local.set({ [TOKEN_KEY]: result.access_token, [USER_KEY]: result.user })
       return { isAuthenticated: true, user: result.user } satisfies AuthState
     }
 
     case "LOGOUT": {
-      await chrome.storage.local.remove([TOKEN_KEY, USER_KEY])
+      await chrome.storage.local.remove([TOKEN_KEY, USER_KEY, LAST_SCAN_KEY])
       return { isAuthenticated: false, user: null } satisfies AuthState
     }
 
@@ -119,8 +127,11 @@ async function handleMessage(message: ExtensionMessage) {
         // No refresh-token endpoint exists (Milestone 3 keeps the backend
         // API unchanged) - an expired token means a clean re-login, not a
         // silent refresh. Detecting this client-side skips a doomed
-        // network round-trip to /api/auth/me.
-        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY])
+        // network round-trip to /api/auth/me. Also clear last-scan here for
+        // the same cross-account leakage reason as LOGOUT above - an
+        // expired session ends this account's context just as much as an
+        // explicit sign-out does.
+        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY, LAST_SCAN_KEY])
         return { isAuthenticated: false, user: null } satisfies AuthState
       }
 
@@ -129,7 +140,7 @@ async function handleMessage(message: ExtensionMessage) {
         await chrome.storage.local.set({ [USER_KEY]: user })
         return { isAuthenticated: true, user } satisfies AuthState
       } catch {
-        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY])
+        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY, LAST_SCAN_KEY])
         return { isAuthenticated: false, user: null } satisfies AuthState
       }
     }
@@ -147,12 +158,17 @@ async function handleMessage(message: ExtensionMessage) {
       // client-side. Check first to skip a doomed round-trip, consistent
       // with GET_AUTH_STATE's handling.
       if (token && isTokenExpired(token)) {
-        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY])
+        await chrome.storage.local.remove([TOKEN_KEY, USER_KEY, LAST_SCAN_KEY])
         return { decision: "ALLOW", sanitized_prompt: message.payload.prompt, findings: [] }
       }
 
       try {
-        return await scanPrompt(token, message.payload.prompt, message.payload.site)
+        return await scanPrompt(
+          token,
+          message.payload.prompt,
+          message.payload.site,
+          message.payload.files ?? []
+        )
       } catch (err) {
         if (err instanceof ScanUnauthorizedError) {
           // The backend rejected the token even though it looked
@@ -160,7 +176,7 @@ async function handleMessage(message: ExtensionMessage) {
           // Clear the stale session so the next popup open / auth check
           // surfaces "please sign in again" instead of silently staying
           // "signed in" with zero protection from here on.
-          await chrome.storage.local.remove([TOKEN_KEY, USER_KEY])
+          await chrome.storage.local.remove([TOKEN_KEY, USER_KEY, LAST_SCAN_KEY])
           return { decision: "ALLOW", sanitized_prompt: message.payload.prompt, findings: [] }
         }
         throw err

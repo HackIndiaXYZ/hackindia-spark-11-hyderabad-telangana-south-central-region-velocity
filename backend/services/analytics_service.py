@@ -136,6 +136,48 @@ def top_employees_by_violations(db: Session, limit: int = 5) -> list[dict]:
     ]
 
 
+def file_scan_stats(db: Session, top_n: int = 8) -> dict:
+    """
+    File Scanning aggregates for the Dashboard/Analytics pages. Pulled from
+    AuditLog.files (JSON metadata only - see models/audit_log.py) rather
+    than a separate table, consistent with how every other aggregate here
+    reads straight off audit_logs. At demo-seed scale this is a simple
+    Python-side rollup; if audit_logs grows into the millions of rows this
+    would want to move to a proper per-file table with its own indexes -
+    same caveat noted elsewhere in this module for JSON-column queries.
+    """
+    rows = db.execute(select(AuditLog.files, AuditLog.action).where(AuditLog.has_files.is_(True))).all()
+
+    total_files = 0
+    blocked_uploads = 0
+    extension_counter: Counter[str] = Counter()
+    category_counter: Counter[str] = Counter()
+
+    for files, action in rows:
+        for f in files or []:
+            total_files += 1
+            extension = (f.get("extension") or "unknown").lower()
+            extension_counter[extension] += 1
+
+            risk = f.get("risk", "NONE")
+            if risk in ("HIGH", "CRITICAL"):
+                category_counter[f.get("category", "unknown")] += 1
+
+            if action == "BLOCK":
+                blocked_uploads += 1
+
+    return {
+        "total_files_scanned": total_files,
+        "blocked_uploads": blocked_uploads,
+        "file_type_breakdown": [
+            {"extension": ext, "count": count} for ext, count in extension_counter.most_common(top_n)
+        ],
+        "top_sensitive_categories": [
+            {"category": cat, "count": count} for cat, count in category_counter.most_common(top_n)
+        ],
+    }
+
+
 def recent_activity(db: Session, limit: int = 10) -> list[dict]:
     rows = db.execute(
         select(AuditLog, User.full_name, User.email)

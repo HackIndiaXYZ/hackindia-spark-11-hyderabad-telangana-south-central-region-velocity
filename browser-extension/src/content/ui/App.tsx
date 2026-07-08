@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react"
 import { WarnModal } from "./WarnModal"
 import { BlockModal } from "./BlockModal"
 import { RedactToast } from "./RedactToast"
+import { FileReviewModal } from "./FileReviewModal"
 import { dismiss, getState, subscribe } from "./store"
 
 export function App() {
@@ -29,6 +30,26 @@ export function App() {
 
   if (state.type === "redact-toast") {
     return <RedactToast message={state.message} onDismiss={dismiss} />
+  }
+
+  if (state.type === "file-review") {
+    return (
+      <FileReviewModal
+        analysis={state.analysis}
+        onDismiss={() => {
+          state.onDismiss()
+          dismiss()
+        }}
+        onUploadFlagged={
+          state.onUploadFlagged
+            ? () => {
+                state.onUploadFlagged?.()
+                dismiss()
+              }
+            : null
+        }
+      />
+    )
   }
 
   return null

@@ -79,6 +79,8 @@ def list_prompt_logs(
             action=log.action,
             status=_status_for(log.action),
             created_at=log.created_at,
+            has_files=log.has_files,
+            file_count=log.file_count,
         )
         for log, full_name, email in rows
     ]
@@ -119,4 +121,5 @@ def get_prompt_log_detail(
         sanitized_prompt=log.sanitized_prompt,
         triggered_rules=[TriggeredRuleDetail(**rule) for rule in (log.triggered_rules or [])],
         created_at=log.created_at,
+        files=log.files or [],
     )

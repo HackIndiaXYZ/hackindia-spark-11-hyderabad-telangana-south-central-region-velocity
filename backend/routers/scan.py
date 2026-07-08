@@ -34,6 +34,7 @@ def scan_prompt(
         original_prompt=payload.prompt,
         sanitized_prompt=output.sanitized_prompt,
         decision=decision,
+        file_findings=output.file_findings,
     )
 
     return ScanResponse(
@@ -43,4 +44,5 @@ def scan_prompt(
         reason=decision.reason,
         sanitized_prompt=output.sanitized_prompt,
         findings=[TriggeredRule(**rule) for rule in decision.triggered_rules],
+        file_findings=output.file_findings,
     )

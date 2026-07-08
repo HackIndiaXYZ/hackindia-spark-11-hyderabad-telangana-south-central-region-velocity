@@ -12,6 +12,40 @@ export interface ScanFinding {
   reason: string
 }
 
+/**
+ * A file captured by the content script's file-picker/drag-and-drop
+ * interception (see content/index.ts), ready to send to POST /api/scan
+ * alongside (or instead of) the prompt. `contentBase64` mirrors the
+ * backend's ScanFileInput.content_base64 field name in spirit but stays
+ * camelCase on this side of the wire per the existing TS convention -
+ * services/api.ts maps it to the snake_case body the backend expects.
+ */
+export interface ScanFilePayload {
+  filename: string
+  contentBase64: string
+  mimeType?: string
+  sizeBytes: number
+}
+
+export interface FileFinding {
+  filename: string
+  extension: string
+  category: string
+  size_bytes: number | null
+  mime_type: string | null
+  risk: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  score: number
+  // This file's OWN decision - computed independently from every other
+  // file and from the prompt (backend: ai/pipeline.py _scan_one_file).
+  // This is what content/index.ts gates individual file uploads on,
+  // instead of the top-level ScanResult.decision, which is the unified
+  // prompt+all-files verdict used only to redact/gate the prompt text.
+  action: Decision
+  reason: string
+  extracted: boolean
+  extraction_note: string | null
+}
+
 export interface ScanResult {
   decision: Decision
   // Added in Milestone 2 (AI Detection Engine) - populated by the Risk
@@ -22,6 +56,9 @@ export interface ScanResult {
   reason?: string
   sanitized_prompt: string
   findings: ScanFinding[]
+  // File Scanning - additive, defaults to [] on responses with no
+  // attachments so existing prompt-only call sites never need to change.
+  file_findings?: FileFinding[]
 }
 
 export interface AuthUser {
@@ -32,7 +69,7 @@ export interface AuthUser {
 }
 
 export type ExtensionMessage =
-  | { type: "SCAN_PROMPT"; payload: { prompt: string; site: string } }
+  | { type: "SCAN_PROMPT"; payload: { prompt: string; site: string; files?: ScanFilePayload[] } }
   | { type: "LOGIN"; payload: { email: string; password: string } }
   | { type: "LOGOUT" }
   | { type: "GET_AUTH_STATE" }

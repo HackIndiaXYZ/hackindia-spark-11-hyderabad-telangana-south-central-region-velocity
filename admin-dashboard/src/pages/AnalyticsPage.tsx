@@ -168,6 +168,42 @@ export function AnalyticsPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader><CardTitle>Uploaded File Types</CardTitle></CardHeader>
+        <CardContent className="h-72">
+          {data.file_stats.file_type_breakdown.length === 0 ? (
+            <p className="pt-16 text-center text-sm text-muted-foreground">No files scanned yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.file_stats.file_type_breakdown} layout="vertical" margin={{ left: 16 }}>
+                <XAxis type="number" hide allowDecimals={false} />
+                <YAxis dataKey="extension" type="category" width={80} fontSize={11} stroke="var(--color-muted-foreground)" tickFormatter={(v) => `.${v}`} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Sensitive File Categories (Files Scanning)</CardTitle></CardHeader>
+        <CardContent className="h-72">
+          {data.file_stats.top_sensitive_categories.length === 0 ? (
+            <p className="pt-16 text-center text-sm text-muted-foreground">No high-risk file uploads yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.file_stats.top_sensitive_categories} layout="vertical" margin={{ left: 16 }}>
+                <XAxis type="number" hide allowDecimals={false} />
+                <YAxis dataKey="category" type="category" width={110} fontSize={11} stroke="var(--color-muted-foreground)" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="count" fill="var(--color-danger)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="lg:col-span-2">
         <CardHeader><CardTitle>Top Employees by Violations</CardTitle></CardHeader>
         <CardContent className="p-0">
