@@ -16,16 +16,10 @@ export function WarnModal({ analysis, onCancel, onContinue }: WarnModalProps) {
       subtitle="Review the details below before sending."
       footer={
         <>
-          <button
-            onClick={onCancel}
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
+          <button onClick={onCancel} className="ps-btn ps-btn-secondary">
             Cancel
           </button>
-          <button
-            onClick={onContinue}
-            className="rounded-md bg-warning px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
+          <button onClick={onContinue} className="ps-btn ps-btn-warning">
             Continue Anyway
           </button>
         </>

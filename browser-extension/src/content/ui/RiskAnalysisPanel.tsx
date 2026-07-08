@@ -20,11 +20,11 @@ export function RiskAnalysisPanel({ analysis }: { analysis: RiskAnalysisView }) 
   return (
     <div className="space-y-4 text-sm">
       <div
-        className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
-        style={{ background: "var(--muted)", isolation: "isolate" }}
+        className="ps-panel-soft flex items-center justify-between rounded-xl px-4 py-3.5"
+        style={{ isolation: "isolate" }}
       >
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Overall Risk</p>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Overall Risk</p>
           <p className="mt-0.5 text-lg font-semibold" style={{ color: riskColor }}>
             {analysis.risk} <span className="text-sm font-normal text-muted-foreground">({analysis.score}/100)</span>
           </p>
@@ -41,21 +41,21 @@ export function RiskAnalysisPanel({ analysis }: { analysis: RiskAnalysisView }) 
 
       {hasFiles && analysis.findings.length > 0 && (
         <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Prompt</p>
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Prompt</p>
           <FindingsList findings={analysis.findings} />
         </div>
       )}
 
       {!hasFiles && analysis.findings.length > 0 && (
         <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Detected</p>
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Detected</p>
           <FindingsList findings={analysis.findings} />
         </div>
       )}
 
       {hasFiles && (
         <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Files ({analysis.fileGroups.length})
           </p>
           <div className="space-y-2">
@@ -63,7 +63,7 @@ export function RiskAnalysisPanel({ analysis }: { analysis: RiskAnalysisView }) 
               const groupColor = RISK_COLORS[group.risk] ?? RISK_COLORS.NONE
               const isClean = group.action === "ALLOW"
               return (
-                <div key={group.filename} className="rounded-md border border-border px-3 py-2" style={{ background: "var(--background)", isolation: "isolate" }}>
+                <div key={group.filename} className="ps-panel-soft rounded-xl px-3 py-2.5" style={{ isolation: "isolate" }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-1.5 font-medium">
                       <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -97,11 +97,8 @@ export function RiskAnalysisPanel({ analysis }: { analysis: RiskAnalysisView }) 
 
       {analysis.triggeredPolicy && (
         <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Triggered Policy</p>
-          <div
-            className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
-            style={{ background: "var(--background)", isolation: "isolate" }}
-          >
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Triggered Policy</p>
+          <div className="ps-panel-soft flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ isolation: "isolate" }}>
             <ShieldAlert className="h-4 w-4 shrink-0 text-primary" />
             <span className="font-medium">{analysis.triggeredPolicy}</span>
           </div>
@@ -109,14 +106,14 @@ export function RiskAnalysisPanel({ analysis }: { analysis: RiskAnalysisView }) 
       )}
 
       <div>
-        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommended Action</p>
+        <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Recommended Action</p>
         <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
           {ACTION_LABELS[analysis.action] ?? analysis.action}
         </span>
       </div>
 
       <div>
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Reason</p>
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Reason</p>
         <p className="text-sm leading-relaxed text-foreground">{analysis.reason}</p>
       </div>
     </div>
@@ -129,8 +126,8 @@ function FindingsList({ findings, compact }: { findings: RiskAnalysisView["findi
       {findings.map((finding, i) => (
         <li
           key={i}
-          className={`flex items-start gap-2 rounded-md border border-border ${compact ? "px-2.5 py-1.5" : "px-3 py-2"}`}
-          style={{ background: compact ? "var(--muted)" : "var(--background)", isolation: "isolate" }}
+          className={`ps-panel-soft flex items-start gap-2 rounded-lg ${compact ? "px-2.5 py-1.5" : "px-3 py-2"}`}
+          style={{ isolation: "isolate" }}
         >
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <div className="min-w-0">

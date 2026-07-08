@@ -131,23 +131,19 @@ export default function App() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Logo className="h-6 w-6" />
-          <span className="text-sm font-semibold">PromptShield AI</span>
+          <span className="ps-title text-[15px]">PromptShield AI</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            className="ps-icon-btn h-7 w-7"
             aria-label="Reload extension"
             title="Reload the extension"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
-          <button
-            onClick={toggleTheme}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Toggle theme"
-          >
+          <button onClick={toggleTheme} className="ps-icon-btn h-7 w-7" aria-label="Toggle theme">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         </div>
@@ -160,7 +156,7 @@ export default function App() {
       ) : auth.isAuthenticated && auth.user ? (
         <div className="space-y-3">
           <div
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
+            className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium ${
               protectionEnabled ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
             }`}
           >
@@ -168,10 +164,10 @@ export default function App() {
             {protectionEnabled ? "Protection active" : "Protection paused"}
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-3">
+          <div className="ps-panel rounded-xl p-3.5">
             <p className="text-sm font-medium leading-none">{auth.user.full_name}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{auth.user.email}</p>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-xs text-muted-foreground">{auth.user.email}</p>
+            <div className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Building2 className="h-3.5 w-3.5" />
               {deriveOrgName(auth.user.email)}
               <span className="mx-1">·</span>
@@ -179,7 +175,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border bg-card p-3 text-xs">
+          <div className="ps-panel space-y-2.5 rounded-xl p-3.5 text-xs">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 {backendStatus?.online ? (
@@ -217,26 +213,23 @@ export default function App() {
 
           <button
             onClick={toggleProtection}
-            className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 text-left text-sm hover:bg-muted"
+            className="ps-panel flex w-full items-center justify-between rounded-xl p-3.5 text-left text-sm transition-[filter] duration-150 hover:brightness-95 active:brightness-90"
           >
             <span>Protection enabled</span>
             <span
-              className={`relative h-5 w-9 rounded-full transition-colors ${
+              className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${
                 protectionEnabled ? "bg-primary" : "bg-muted-foreground/30"
               }`}
             >
               <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
                   protectionEnabled ? "translate-x-4" : "translate-x-0.5"
                 }`}
               />
             </span>
           </button>
 
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-border py-2 text-sm font-medium hover:bg-muted"
-          >
+          <button onClick={handleLogout} className="ps-btn ps-btn-secondary w-full">
             <LogOut className="h-4 w-4" />
             Sign out
           </button>
@@ -250,7 +243,7 @@ export default function App() {
             placeholder="you@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2 focus:ring-primary/40"
           />
           <input
             type="password"
@@ -258,14 +251,10 @@ export default function App() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2 focus:ring-primary/40"
           />
           {error && <p className="text-xs text-danger">{error}</p>}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-          >
+          <button type="submit" disabled={isSubmitting} className="ps-btn ps-btn-primary w-full">
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             Sign in
           </button>

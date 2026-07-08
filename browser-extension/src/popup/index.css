@@ -12,6 +12,30 @@
   --danger: oklch(0.58 0.22 25);
   --warning: oklch(0.6 0.19 55);
   --success: oklch(0.6 0.15 150);
+
+  /* See content/ui/content.css for the fuller Liquid Glass + typography
+     rationale (identical system, mirrored here since the popup and the
+     content-script UI are separate bundles with separate stylesheets). */
+  --font-serif: "Anthropic Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --glass-rim: oklch(1 0 0 / 0.75);
+  --glass-rim-soft: oklch(1 0 0 / 0.4);
+  --glass-edge: oklch(1 0 0 / 0.22);
+  --glass-sheen: oklch(1 0 0 / 0.36);
+  --glass-sheen-soft: oklch(1 0 0 / 0.24);
+
+  /* The popup owns its whole window (nothing unpredictable is ever behind
+     it), so its surface cards can afford to sit on a subtle body gradient
+     rather than a flat fill, giving the same soft "vibrancy" macOS System
+     Settings panels have. */
+  --surface: oklch(1 0 0 / 0.68);
+  --surface-border: oklch(1 0 0 / 0.5);
+  --btn-secondary-bg: oklch(1 0 0 / 0.3);
+  --btn-secondary-bg-hover: oklch(1 0 0 / 0.48);
+  --shadow-panel: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 1px 1px oklch(0.15 0.01 260 / 0.04), 0 10px 24px -12px oklch(0.15 0.01 260 / 0.18);
+  --body-gradient: linear-gradient(180deg, oklch(0.995 0.002 260) 0%, oklch(0.965 0.004 260) 100%);
 }
 
 .dark {
@@ -26,6 +50,20 @@
   --danger: oklch(0.66 0.2 25);
   --warning: oklch(0.72 0.17 60);
   --success: oklch(0.68 0.15 150);
+
+  --glass-rim: oklch(1 0 0 / 0.14);
+  --glass-rim-soft: oklch(1 0 0 / 0.08);
+  --glass-edge: oklch(1 0 0 / 0.07);
+  --glass-sheen: oklch(1 0 0 / 0.08);
+  --glass-sheen-soft: oklch(1 0 0 / 0.05);
+
+  --surface: oklch(0.26 0.012 260 / 0.62);
+  --surface-border: oklch(1 0 0 / 0.11);
+  --btn-secondary-bg: oklch(1 0 0 / 0.07);
+  --btn-secondary-bg-hover: oklch(1 0 0 / 0.13);
+  --shadow-panel: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 1px 1px oklch(0 0 0 / 0.35), 0 10px 24px -12px oklch(0 0 0 / 0.5);
+  --body-gradient: linear-gradient(180deg, oklch(0.185 0.012 260) 0%, oklch(0.145 0.012 260) 100%);
 }
 
 @theme inline {
@@ -40,12 +78,102 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-success: var(--success);
+  --color-surface: var(--surface);
+  --color-surface-border: var(--surface-border);
+  --shadow-panel: var(--shadow-panel);
 }
 
 body {
   width: 340px;
-  background-color: var(--color-background);
+  background: var(--body-gradient);
+  background-attachment: fixed;
   color: var(--color-foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Headings only (the "PromptShield AI" brand title) - body text, buttons,
+   metadata, etc. all stay on the sans stack above. See content.css for
+   the full rationale on the font choice. */
+.ps-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* --- Liquid Glass surfaces & buttons (mirrors content/ui/content.css) -- */
+.ps-panel {
+  background-color: var(--surface);
+  background-image: linear-gradient(180deg, var(--glass-sheen), transparent 55%);
+  border: 1px solid var(--surface-border);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: var(--shadow-panel);
+}
+
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease,
+    filter 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+}
+.ps-btn:active { transform: scale(0.97); }
+.ps-btn:disabled { opacity: 0.5; pointer-events: none; }
+.ps-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.ps-btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  background-image: linear-gradient(180deg, var(--glass-sheen-soft), transparent 60%);
+  border-color: var(--surface-border);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 var(--glass-rim-soft), inset 0 0 0 1px oklch(1 0 0 / 0.08),
+    0 1px 2px oklch(0.15 0.01 260 / 0.04), 0 4px 12px -8px oklch(0.15 0.01 260 / 0.14);
+}
+.ps-btn-secondary:hover { background-color: var(--btn-secondary-bg-hover); }
+
+.ps-btn-primary {
+  background-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 84%, transparent);
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 0.32), transparent 60%);
+  border-color: oklch(1 0 0 / 0.2);
+  color: var(--primary-foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), inset 0 0 0 1px oklch(1 0 0 / 0.14),
+    0 1px 2px oklch(0.15 0.01 260 / 0.1), 0 10px 22px -8px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+.ps-btn-primary:hover { filter: brightness(1.08); }
+
+.ps-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+.ps-icon-btn:hover {
+  background-color: var(--btn-secondary-bg-hover);
+  border-color: var(--surface-border);
+  color: var(--foreground);
+}
+.ps-icon-btn:active { transform: scale(0.94); }
+.ps-icon-btn:disabled { opacity: 0.5; pointer-events: none; }
+.ps-icon-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-btn, .ps-icon-btn {
+    transition: background-color 1ms, color 1ms, border-color 1ms, filter 1ms !important;
+  }
+  .ps-btn:active, .ps-icon-btn:active { transform: none; }
 }

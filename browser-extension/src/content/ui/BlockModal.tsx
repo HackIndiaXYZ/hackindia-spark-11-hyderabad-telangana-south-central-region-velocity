@@ -14,10 +14,7 @@ export function BlockModal({ analysis, onDismiss }: BlockModalProps) {
       title="Prompt Blocked"
       subtitle="This prompt was not sent - it violates your organization's AI usage policy."
       footer={
-        <button
-          onClick={onDismiss}
-          className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <button onClick={onDismiss} className="ps-btn ps-btn-danger">
           Edit Prompt
         </button>
       }

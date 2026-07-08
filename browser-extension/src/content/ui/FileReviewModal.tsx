@@ -32,24 +32,15 @@ export function FileReviewModal({ analysis, onDismiss, onUploadFlagged }: FileRe
       }
       footer={
         hasBlockedOnly ? (
-          <button
-            onClick={onDismiss}
-            className="rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
+          <button onClick={onDismiss} className="ps-btn ps-btn-danger">
             Got it
           </button>
         ) : (
           <>
-            <button
-              onClick={onDismiss}
-              className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
-            >
+            <button onClick={onDismiss} className="ps-btn ps-btn-secondary">
               Skip These Files
             </button>
-            <button
-              onClick={onUploadFlagged}
-              className="rounded-md bg-warning px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
+            <button onClick={onUploadFlagged} className="ps-btn ps-btn-warning">
               Upload Anyway
             </button>
           </>

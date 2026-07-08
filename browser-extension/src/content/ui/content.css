@@ -21,7 +21,57 @@
   --danger: oklch(0.58 0.22 25);
   --warning: oklch(0.6 0.19 55);
   --success: oklch(0.6 0.15 150);
-  --overlay: oklch(0.15 0.01 260 / 0.55);
+  --overlay: oklch(0.15 0.01 260 / 0.42);
+
+  /* "Anthropic Serif" (Claude's own brand serif, e.g. Copernicus) is a
+     licensed commercial font and isn't available to bundle/redistribute
+     here. The stack below is the closest safe, legal substitute: ui-serif
+     resolves to the OS's native elegant serif (San Francisco's serif
+     companion "New York" on macOS/iOS), Georgia is a warm, humanist
+     fallback everywhere else. Swap in the real font later by dropping a
+     .woff2 into public/fonts/, adding an @font-face for "Anthropic Serif",
+     and nothing else needs to change - this variable already puts it
+     first in the stack. */
+  --font-serif: "Anthropic Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  /* --- Liquid Glass material tokens --------------------------------------
+     A real sheet of glass reads as glass through several *combined* cues,
+     not through transparency alone: a soft light-to-clear sheen across the
+     top (the surface catching ambient light), a bright inner rim along the
+     top edge (--glass-rim) plus a faint all-around inner edge-glow
+     (--glass-edge) that stands in for refraction, and several small,
+     separate ambient shadows instead of one heavy drop shadow (a single
+     big shadow reads as "card with a shadow"; 2-3 tightly-graduated ones
+     read as "material floating above a surface"). --surface itself stays
+     fairly opaque still - the panel sits over arbitrary ChatGPT/Claude/
+     Gemini page content, and Apple's own Liquid Glass panels (Control
+     Center, System Settings) are visibly frosted/tinted rather than truly
+     see-through; the "glass" read comes from the rim + sheen + layered
+     shadow below, not from cranking transparency up. */
+  --glass-rim: oklch(1 0 0 / 0.75);
+  --glass-rim-soft: oklch(1 0 0 / 0.4);
+  --glass-edge: oklch(1 0 0 / 0.22);
+  --glass-sheen: oklch(1 0 0 / 0.42);
+  --glass-sheen-soft: oklch(1 0 0 / 0.28);
+
+  --surface: oklch(1 0 0 / 0.8);
+  --surface-soft: oklch(1 0 0 / 0.5);
+  --surface-border: oklch(1 0 0 / 0.55);
+
+  --scrollbar-thumb: oklch(0.15 0.01 260 / 0.16);
+  --scrollbar-thumb-hover: oklch(0.15 0.01 260 / 0.28);
+
+  --btn-secondary-bg: oklch(1 0 0 / 0.32);
+  --btn-secondary-bg-hover: oklch(1 0 0 / 0.5);
+
+  --shadow-panel: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 1px 1px oklch(0.15 0.01 260 / 0.05), 0 3px 10px oklch(0.15 0.01 260 / 0.08),
+    0 28px 56px -16px oklch(0.15 0.01 260 / 0.22);
+  --shadow-panel-soft: inset 0 1px 0 var(--glass-rim-soft), inset 0 0 0 1px oklch(1 0 0 / 0.14),
+    0 1px 3px oklch(0.15 0.01 260 / 0.06);
+  --shadow-toast: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 2px 6px oklch(0.15 0.01 260 / 0.06), 0 18px 36px -12px oklch(0.15 0.01 260 / 0.2);
 }
 
 .dark {
@@ -37,7 +87,30 @@
   --danger: oklch(0.66 0.2 25);
   --warning: oklch(0.72 0.17 60);
   --success: oklch(0.68 0.15 150);
-  --overlay: oklch(0 0 0 / 0.65);
+  --overlay: oklch(0 0 0 / 0.5);
+
+  --glass-rim: oklch(1 0 0 / 0.16);
+  --glass-rim-soft: oklch(1 0 0 / 0.09);
+  --glass-edge: oklch(1 0 0 / 0.08);
+  --glass-sheen: oklch(1 0 0 / 0.09);
+  --glass-sheen-soft: oklch(1 0 0 / 0.06);
+
+  --surface: oklch(0.22 0.012 260 / 0.72);
+  --surface-soft: oklch(0.26 0.012 260 / 0.42);
+  --surface-border: oklch(1 0 0 / 0.12);
+
+  --scrollbar-thumb: oklch(1 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(1 0 0 / 0.28);
+
+  --btn-secondary-bg: oklch(1 0 0 / 0.08);
+  --btn-secondary-bg-hover: oklch(1 0 0 / 0.14);
+
+  --shadow-panel: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 1px 1px oklch(0 0 0 / 0.4), 0 3px 10px oklch(0 0 0 / 0.35), 0 28px 56px -16px oklch(0 0 0 / 0.6);
+  --shadow-panel-soft: inset 0 1px 0 var(--glass-rim-soft), inset 0 0 0 1px oklch(1 0 0 / 0.05),
+    0 1px 3px oklch(0 0 0 / 0.3);
+  --shadow-toast: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--glass-edge),
+    0 2px 6px oklch(0 0 0 / 0.3), 0 18px 36px -12px oklch(0 0 0 / 0.55);
 }
 
 @theme inline {
@@ -53,12 +126,27 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-success: var(--success);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-border: var(--surface-border);
+  --shadow-panel: var(--shadow-panel);
+  --shadow-toast: var(--shadow-toast);
 }
 
 .promptshield-root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-sans);
   color: var(--color-foreground);
   line-height: 1.45;
+}
+
+/* Headings only (modal titles, toast title) - everything else (body text,
+   buttons, findings, filenames, metadata) stays on the sans stack above,
+   matching Claude's own split between a serif display face and a sans
+   working face. */
+.ps-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .promptshield-root * {
@@ -83,3 +171,155 @@
 .ps-anim-overlay { animation: promptshield-fade-in 160ms ease-out; }
 .ps-anim-modal { animation: promptshield-scale-in 180ms cubic-bezier(0.16, 1, 0.3, 1); }
 .ps-anim-toast { animation: promptshield-slide-up 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Slim, pill-shaped scrollbar for the modal's scrollable body - replaces
+   the default chunky OS scrollbar with something that matches the glass
+   material instead of looking like a stock browser control. Firefox gets
+   the equivalent via `scrollbar-width`/`scrollbar-color`; every other
+   engine here is Chromium (Manifest V3), which only supports the
+   ::-webkit-scrollbar pseudo-elements. */
+.ps-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.ps-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.ps-scroll::-webkit-scrollbar-track { background: transparent; }
+.ps-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.ps-scroll::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
+
+/* --- Liquid Glass surfaces ---------------------------------------------
+   Each surface is built from the same three layers: a translucent tint
+   (background-color), a soft top-to-clear sheen (background-image - a
+   plain gradient *layer*, not a separate stacked element, so it can never
+   sit on top of text/icons or need z-index juggling), and a composite
+   box-shadow carrying the inner rim highlight + edge glow + ambient drop
+   shadows defined above. */
+.ps-panel {
+  background-color: var(--surface);
+  background-image: linear-gradient(180deg, var(--glass-sheen), transparent 55%);
+  border: 1px solid var(--surface-border);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Lighter, more visibly "glassy" surface for cards nested inside a panel
+   that's already opaque (finding rows, per-file cards, policy callouts). */
+.ps-panel-soft {
+  background-color: var(--surface-soft);
+  background-image: linear-gradient(180deg, var(--glass-sheen-soft), transparent 60%);
+  border: 1px solid var(--surface-border);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: var(--shadow-panel-soft);
+}
+
+/* Small circular glass badge for a modal/toast's leading icon - a tinted
+   pane of glass the icon sits behind, not a flat colored disc. */
+.ps-icon-glass {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid var(--surface-border);
+  background-image: linear-gradient(180deg, var(--glass-sheen-soft), transparent 60%);
+  box-shadow: inset 0 1px 0 var(--glass-rim-soft), inset 0 0 0 1px oklch(1 0 0 / 0.12);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+}
+.ps-icon-glass-warning { background-color: color-mix(in oklch, var(--warning) 20%, var(--surface-soft)); color: var(--warning); }
+.ps-icon-glass-danger { background-color: color-mix(in oklch, var(--danger) 20%, var(--surface-soft)); color: var(--danger); }
+.ps-icon-glass-success { background-color: color-mix(in oklch, var(--success) 20%, var(--surface-soft)); color: var(--success); }
+
+/* --- Liquid Glass buttons -----------------------------------------------
+   Pill-shaped, like Apple's own Control Center / Liquid Glass buttons
+   (rather than a soft-rounded rectangle, which reads more "web app" than
+   "system control"). Secondary buttons are near-clear glass (border +
+   faint tint carry all the weight); primary/warning/danger are "colored
+   glass" - the brand color blended into transparency with color-mix(),
+   kept fairly saturated on purpose: unlike the passive content panels
+   (which lean glassy/see-through), a button is the one thing in the
+   dialog that must read as unambiguously clickable, so it stays confident
+   rather than washed out. Each gets its own tinted ambient shadow (a
+   button-colored glow, not a generic gray one) so it looks lifted off the
+   panel instead of pasted flat onto it. A solid background-color is
+   declared before each color-mix() line as a plain-color fallback for
+   engines that don't support color-mix() - if unsupported it's simply an
+   invalid value the browser discards, leaving the solid color in place. */
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.5rem 1.15rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease,
+    filter 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+}
+.ps-btn:active { transform: scale(0.97); }
+.ps-btn:disabled { opacity: 0.5; pointer-events: none; }
+.ps-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.ps-btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  background-image: linear-gradient(180deg, var(--glass-sheen-soft), transparent 60%);
+  border-color: var(--surface-border);
+  color: var(--card-foreground);
+  box-shadow: inset 0 1px 0 var(--glass-rim-soft), inset 0 0 0 1px oklch(1 0 0 / 0.08),
+    0 1px 2px oklch(0.15 0.01 260 / 0.04), 0 4px 12px -8px oklch(0.15 0.01 260 / 0.14);
+}
+.ps-btn-secondary:hover { background-color: var(--btn-secondary-bg-hover); }
+
+.ps-btn-primary {
+  background-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 84%, transparent);
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 0.32), transparent 60%);
+  border-color: oklch(1 0 0 / 0.2);
+  color: var(--primary-foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), inset 0 0 0 1px oklch(1 0 0 / 0.14),
+    0 1px 2px oklch(0.15 0.01 260 / 0.1), 0 10px 22px -8px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+.ps-btn-primary:hover { filter: brightness(1.08); }
+
+.ps-btn-warning {
+  background-color: var(--warning);
+  background-color: color-mix(in oklch, var(--warning) 85%, transparent);
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 0.32), transparent 60%);
+  border-color: oklch(1 0 0 / 0.2);
+  color: white;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), inset 0 0 0 1px oklch(1 0 0 / 0.14),
+    0 1px 2px oklch(0.15 0.01 260 / 0.1), 0 10px 22px -8px color-mix(in oklch, var(--warning) 55%, transparent);
+}
+.ps-btn-warning:hover { filter: brightness(1.05); }
+
+.ps-btn-danger {
+  background-color: var(--danger);
+  background-color: color-mix(in oklch, var(--danger) 85%, transparent);
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 0.32), transparent 60%);
+  border-color: oklch(1 0 0 / 0.2);
+  color: white;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), inset 0 0 0 1px oklch(1 0 0 / 0.14),
+    0 1px 2px oklch(0.15 0.01 260 / 0.1), 0 10px 22px -8px color-mix(in oklch, var(--danger) 55%, transparent);
+}
+.ps-btn-danger:hover { filter: brightness(1.05); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-anim-overlay, .ps-anim-modal, .ps-anim-toast {
+    animation: none !important;
+  }
+  .ps-btn {
+    transition: background-color 1ms, color 1ms, border-color 1ms, filter 1ms !important;
+  }
+  .ps-btn:active { transform: none; }
+}

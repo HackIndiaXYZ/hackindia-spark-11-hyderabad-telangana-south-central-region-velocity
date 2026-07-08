@@ -18,15 +18,21 @@ export function RedactToast({ message, onDismiss }: RedactToastProps) {
       style={{ isolation: "isolate" }}
     >
       <div
-        className="flex items-start gap-3 rounded-xl border border-border p-4 text-sm shadow-2xl"
-        style={{ background: "var(--card)", isolation: "isolate" }}
+        className="ps-panel flex items-start gap-3 rounded-2xl p-4 text-sm"
+        style={{ boxShadow: "var(--shadow-toast)", isolation: "isolate" }}
       >
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-card-foreground">Prompt was automatically sanitized</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{message}</p>
+        <div className="ps-icon-glass ps-icon-glass-success h-8 w-8 shrink-0">
+          <CheckCircle2 className="h-4 w-4" />
         </div>
-        <button onClick={onDismiss} className="shrink-0 text-muted-foreground hover:text-foreground">
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="ps-title text-[15px] leading-snug text-card-foreground">Prompt was automatically sanitized</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{message}</p>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="shrink-0 text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          aria-label="Dismiss"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
